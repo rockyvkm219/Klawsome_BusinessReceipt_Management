@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Expense Submission</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f3ef;
+      --surface: #ffffff;
+      --border: #d6d0c8;
+      --border-focus: #1a1a1a;
+      --text: #1a1a1a;
+      --text-muted: #7a7468;
+      --accent: #d4501a;
+      --accent-hover: #b84315;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: var(--sans);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    header {
+      background: var(--text);
+      color: white;
+      padding: 20px 24px 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .form-wrap {
+      padding: 24px 16px;
+      max-width: 520px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    label .req {
+      color: var(--accent);
+      margin-left: 3px;
+    }
+
+    input, select, textarea {
+      font-family: var(--sans);
+      font-size: 16px; /* prevents iOS zoom */
+      color: var(--text);
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 14px;
+      width: 100%;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--border-focus);
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7468' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+
+    textarea {
+      resize: none;
+      height: 90px;
+      line-height: 1.5;
+    }
+
+    .amount-wrap {
+      position: relative;
+    }
+
+    .amount-wrap input {
+      padding-left: 32px;
+    }
+
+    .amount-symbol {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Receipt upload */
+    .receipt-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .receipt-zone:hover, .receipt-zone.has-file {
+      border-color: var(--border-focus);
+      background: #fafaf8;
+    }
+
+    .receipt-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border: none;
+    }
+
+    .receipt-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .receipt-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .receipt-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .receipt-preview {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .receipt-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 4px;
+      object-fit: contain;
+      border: 1px solid var(--border);
+    }
+
+    .receipt-filename {
+      display: none;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      word-break: break-all;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Submit */
+    button[type="submit"] {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: var(--sans);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: background 0.15s, transform 0.1s;
+      margin-top: 8px;
+    }
+
+    button[type="submit"]:active {
+      transform: scale(0.98);
+    }
+
+    button[type="submit"]:hover {
+      background: var(--accent-hover);
+    }
+
+    button[type="submit"]:disabled {
+      background: #bbb;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status messages */
+    .status {
+      display: none;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .status.success {
+      background: #edfaf1;
+      border: 1.5px solid #6fcf97;
+      color: #1a5c35;
+    }
+
+    .status.error {
+      background: #fef0ee;
+      border: 1.5px solid #e07060;
+      color: #7a2318;
+    }
+
+    .status-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Config notice */
+    .config-notice {
+      background: #fff8e6;
+      border: 1.5px solid #f0c040;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #5a4500;
+      line-height: 1.5;
+    }
+
+    .config-notice strong { font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-label">Internal</div>
+    <h1>Expense Submission</h1>
+  </header>
+
+  <div class="form-wrap">
+
+    <!-- ⚠️ Remove this block once you've set your Apps Script URL below -->
+    <div class="config-notice" id="configNotice">
+      <strong>Setup needed:</strong> Paste your Google Apps Script web app URL into the
+      <code>SCRIPT_URL</code> variable at the top of this file's &lt;script&gt; tag.
+    </div>
+
+    <div id="statusMsg" class="status"></div>
+
+    <form id="expenseForm" novalidate>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <div class="field">
+          <label>Employee Name <span class="req">*</span></label>
+          <input type="text" name="name" placeholder="Full name" required autocomplete="name" />
+        </div>
+
+        <div class="field">
+          <label>Date of Transaction <span class="req">*</span></label>
+          <input type="date" name="date" required />
+        </div>
+
+        <div class="field">
+          <label>Amount <span class="req">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-symbol">$</span>
+            <input type="number" name="amount" placeholder="0.00" step="0.01" min="0.01" required inputmode="decimal" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Category <span class="req">*</span></label>
+          <select name="category" required>
+            <option value="" disabled selected>Select a category</option>
+            <option>Meals &amp; Entertainment</option>
+            <option>Travel</option>
+            <option>Lodging</option>
+            <option>Fuel &amp; Transportation</option>
+            <option>Office Supplies</option>
+            <option>Software &amp; Subscriptions</option>
+            <option>Equipment</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <label>Receipt Photo <span class="req">*</span></label>
+          <div class="receipt-zone" id="receiptZone">
+            <input type="file" name="receipt" id="receiptInput"
+              accept="image/*,application/pdf"
+              capture="environment"
+              required />
+            <div class="receipt-icon">📷</div>
+            <div class="receipt-text">Tap to take or upload photo</div>
+            <div class="receipt-sub">JPG, PNG, or PDF · max 10 MB</div>
+            <div class="receipt-preview" id="receiptPreview">
+              <img id="previewImg" src="" alt="Receipt preview" />
+            </div>
+            <div class="receipt-filename" id="receiptFilename"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Notes / Comments</label>
+          <textarea name="notes" placeholder="Any additional context (optional)…"></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn">Submit Expense</button>
+
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ─── CONFIGURE THIS ───────────────────────────────────────────────────────
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRSg_a9AsISzcCTS2L6m0HFPSmNJNOM2k_c_wChbGYKIc6fkBhdbE_neNwFmt2qr6A/exec';
+    // ──────────────────────────────────────────────────────────────────────────
+
+    // Hide config notice if URL is set
+    if (SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+      document.getElementById('configNotice').style.display = 'none';
+    }
+
+    // Receipt preview
+    const receiptInput = document.getElementById('receiptInput');
+    const receiptZone  = document.getElementById('receiptZone');
+    const previewImg   = document.getElementById('previewImg');
+    const receiptPreview  = document.getElementById('receiptPreview');
+    const receiptFilename = document.getElementById('receiptFilename');
+
+    receiptInput.addEventListener('change', () => {
+      const file = receiptInput.files[0];
+      if (!file) return;
+      receiptZone.classList.add('has-file');
+      receiptFilename.style.display = 'block';
+      receiptFilename.textContent = file.name;
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          previewImg.src = e.target.result;
+          receiptPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        receiptPreview.style.display = 'none';
+        previewImg.src = '';
+      }
+    });
+
+    // Form submit
+    const form      = document.getElementById('expenseForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusMsg = document.getElementById('statusMsg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Basic validation
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+        showStatus('error', 'Not configured', 'Please set the SCRIPT_URL in the HTML file before submitting.');
+        return;
+      }
+
+      const file = receiptInput.files[0];
+      if (!file) {
+        showStatus('error', 'Receipt required', 'Please attach a photo of your receipt.');
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        showStatus('error', 'File too large', 'Receipt must be under 10 MB.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span>Submitting…';
+      statusMsg.style.display = 'none';
+
+      try {
+        // Convert file to base64
+        const base64 = await fileToBase64(file);
+
+        const payload = {
+          name:      form.name.value.trim(),
+          date:      form.date.value,
+          amount:    parseFloat(form.amount.value).toFixed(2),
+          category:  form.category.value,
+          notes:     form.notes.value.trim(),
+          fileName:  file.name,
+          mimeType:  file.type || 'application/octet-stream',
+          fileData:  base64,
+        };
+
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+
+        const json = await res.json();
+
+        if (json.status === 'ok') {
+          showStatus('success', 'Submitted!', 'Your expense has been recorded. You can close this page.');
+          form.reset();
+          receiptZone.classList.remove('has-file');
+          receiptPreview.style.display = 'none';
+          receiptFilename.style.display = 'none';
+          previewImg.src = '';
+        } else {
+          throw new Error(json.message || 'Unknown error');
+        }
+      } catch (err) {
+        showStatus('error', 'Submission failed', err.message || 'Please try again or contact your admin.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Expense';
+      }
+    });
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function showStatus(type, title, msg) {
+      statusMsg.className = `status ${type}`;
+      statusMsg.innerHTML = `<div class="status-title">${title}</div>${msg}`;
+      statusMsg.style.display = 'block';
+      statusMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>
